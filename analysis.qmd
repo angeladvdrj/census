@@ -44,3 +44,59 @@ ggplot(income_tx) +
     legend.title = element_text(face = "bold")
   )
 ```
+
+```{r}
+#| label: create-edu-state
+#| message: false
+#| cache: true
+
+edu_state <- get_acs(
+  geography = "state",
+  variables = c("B15003_001", "B15003_022", "B15003_023", "B15003_024", "B15003_025"),
+  year = 2020,
+  summary_var = "B15003_001"
+)
+```
+
+```{r}
+edu_state |>
+  filter(variable != "B15003_001") |>
+  group_by(GEOID, NAME) |>
+  summarize(
+    total_adults = first(summary_est),
+    bachelors_or_higher = sum(estimate),
+    .groups = "drop"
+  ) |>
+  mutate(
+    percent_bachelors_or_higher = 100 * bachelors_or_higher / total_adults
+  ) |>
+  ggplot(aes(
+    x = fct_reorder(NAME, percent_bachelors_or_higher),
+    y = percent_bachelors_or_higher
+  )) +
+  geom_col(aes(fill = percent_bachelors_or_higher), color = "white") +
+  coord_flip() +
+  scale_y_continuous(
+    labels = scales::label_percent(scale = 1),
+    expand = expansion(mult = c(0, 0.05))
+  ) +
+  scale_fill_viridis_c(
+    option = "viridis",
+    labels = scales::label_percent(scale = 1),
+    name = "Bachelor's or higher"
+  ) +
+  labs(
+    title = "Adults with a Bachelor's Degree or Higher by State",
+    x = "State",
+    y = "Share of adults with a bachelor's degree or higher",
+    caption = "Source: U.S. Census Bureau, 2020 ACS 5-year estimates, via tidycensus."
+  ) +
+  theme_light() +
+  theme(
+    plot.title = element_text(face = "bold", hjust = 0.5),
+    plot.caption = element_text(hjust = 0, size = 9),
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.title = element_text(face = "bold")
+  )
+```
